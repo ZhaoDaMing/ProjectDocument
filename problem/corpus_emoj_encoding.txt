@@ -1,0 +1,11 @@
+sed -n '10650p'
+提现怎么还没到账😡😡😡
+
+java.sql.SQLException: Incorrect string value: '\xF0\x9F\x98\xA1\xF0\x9F...' for column 'content' at row 1
+
+##在mysql中试插入值
+insert into testdb.new_table values(1,'提现怎么还没到账😡');
+
+Error Code: 1366. Incorrect string value: '\xF0\x9F\x98\xA1' for column 'content' at row 1
+
+还是用字节存入数据库

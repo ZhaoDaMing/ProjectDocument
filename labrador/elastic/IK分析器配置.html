@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>IK分析器配置</title>
+<link rel="stylesheet" href="https://stackedit.io/res-min/themes/base.css" />
+<script type="text/javascript" src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS_HTML"></script>
+</head>
+<body><div class="container"><h3 id="github-ik插件地址">GitHub IK插件地址</h3>
+
+
+
+<h3 id="httpsgithubcommedclelasticsearch-analysis-ik"><a href="https://github.com/medcl/elasticsearch-analysis-ik">https://github.com/medcl/elasticsearch-analysis-ik</a></h3>
+
+<p>需要注意IK插件的版本,要和ElasticSearch对应,否则出错(而且应该按照第二种命令的方式进行下载,简单不易错,开始按照第一种出现了找不到文件的错误)</p>
+
+
+
+<h2 id="1安装方式">1.安装方式</h2>
+
+<p>optional 1 - download pre-build package from here: <a href="https://github.com/medcl/elasticsearch-analysis-ik/releases">https://github.com/medcl/elasticsearch-analysis-ik/releases</a> <br>
+unzip plugin to folder your-es-root/plugins/</p>
+
+<p>optional 2 - use elasticsearch-plugin to install ( version &gt; v5.5.1 ): <br>
+./bin/elasticsearch-plugin install <a href="https://github.com/medcl/elasticsearch-analysis-ik/releases/download/v5.6.1/elasticsearch-analysis-ik-5.6.1.zip">https://github.com/medcl/elasticsearch-analysis-ik/releases/download/v5.6.1/elasticsearch-analysis-ik-5.6.1.zip</a></p>
+
+<table>
+<thead>
+<tr>
+  <th>IK version</th>
+  <th align="center">ES version</th>
+</tr>
+</thead>
+<tbody><tr>
+  <td>5.6.1</td>
+  <td align="center">5.6.1</td>
+</tr>
+<tr>
+  <td>5.5.3</td>
+  <td align="center">5.5.3</td>
+</tr>
+</tbody></table>
+
+
+<p>我用optional1没有成功,就用optional2了,elaticsearch支持的插件安装程序 <br>
+cd elasticsearh-root-dir <br>
+然后复制该命令到命令行 回车即可</p>
+
+
+
+<h2 id="2安装完成之后可以测试效果对比">2.安装完成之后可以测试效果对比</h2>
+
+<p>1.测试内置的”standard”标准分析器效果</p>
+
+<pre><code>curl -XPOST http://localhost:9200/_analyze?pretty -d '{
+  "analyzer": "standard",
+  "text":  "庖丁解牛成语中文english test"
+}'
+</code></pre>
+
+<p>2.测试刚刚安装好的ik分词分析器插件的效果</p>
+
+<pre><code>curl -XPOST http://localhost:9200/_analyze?pretty -d '{
+"analyzer": "ik_max_word",
+"text":  "庖丁解牛成语中文english test"
+}'
+</code></pre>
+
+<p>3.GitHub上复制的原话(就用ik_max_word靠谱)</p>
+
+<blockquote>
+  <p>移除名为 ik 的analyzer和tokenizer,请分别使用 ik_smart 和 ik_max_word <br>
+  ik_max_word 和 ik_smart 什么区别? <br>
+  ik_max_word: 会将文本做最细粒度的拆分，比如会将“中华人民共和国国歌”拆分为“中华人民共和国,中华人民,中华,华人,人民共和国,人民,人,民,共和国,共和,和,国国,国歌”，会穷尽各种可能的组合； <br>
+  ik_smart: 会做最粗粒度的拆分，比如会将“中华人民共和国国歌”拆分为“中华人民共和国,国歌”。</p>
+</blockquote>
+
+<p>4.ElasticSearch Reference的地址:<a href="https://www.elastic.co/guide/en/elasticsearch/reference/current/analyzer-anatomy.html">剖析Analyzer</a></p>
+
+<blockquote>
+  <p>Anlyzer由character filter+tokenizer+token filter组成,添加的这个ik实际上主要是tonkenizer分词器的效果,之后要改可以和其他filter组合 <br>
+  IK的Git上的一句话:Analyzer: ik_smart , ik_max_word , Tokenizer: ik_smart , ik_max_word <br>
+    组合示例(这个就是看一下,不能复制直接用) <br>
+    POST _analyze <br>
+    { <br>
+    “tokenizer”: “standard”, <br>
+    “filter”:  [ “lowercase”, “asciifolding” ], <br>
+    “text”:      “Is this déja vu?” <br>
+    }</p>
+</blockquote>
+
+
+
+<h2 id="3ik热更新ik-analysis-for-elasticsearch">3.IK热更新:<a href="https://github.com/medcl/elasticsearch-analysis-ik">IK Analysis for Elasticsearch</a></h2>
+
+<p>修改 elasticsearch-root-dir/config/analysis-ik/IKAnalyzer.cfg.xml</p>
+
+<pre><code>&lt;!--用户可以在这里配置远程扩展字典 --&gt;
+&lt;entry key="remote_ext_dict"&gt;http://localhost:8080/elasticsearch/ik/remote_my_dict.txt&lt;/entry&gt;
+</code></pre>
+
+<p>其实配置好那个url就可以,随便用什么可以被访问的http服务器就行(我在linux弄的tomcat) <br>
+配置好之后在remote_my_dict.txt中随时添加词就可以,不用重启elasticsearch的服务(但是加完词,测试查询不会立马生效,得过个10多秒,不知道具体怎么回事.估计是用定时器去特定时间发送那个链接的请求吧)  `</p></div></body>
+</html>

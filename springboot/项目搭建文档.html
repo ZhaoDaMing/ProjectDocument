@@ -1,0 +1,322 @@
+﻿<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FAQ</title>
+<link rel="stylesheet" href="https://stackedit.io/res-min/themes/base.css" />
+<script type="text/javascript" src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS_HTML"></script>
+</head>
+<body><div class="container"><h1 id="labrador-springboot-项目基本入门">Labrador SpringBoot 项目基本入门</h1>
+
+<p><a href="https://spring.io/">1.百度搜索Spring官网</a> <br>
+进入官网右上角点击DOCS,点击绿色按钮Start a new Spring project <br>
+进入如下页面,选择需要的依赖(这里加入的Web和JPA),这里只选择Web即可,点击绿色生成按钮Generate Project(图1) <br>
+<img src="img/p1.png" alt="项目搭建图片" title="">   图1</p>
+
+<p>pom.xml文件配置可以看到如下依赖</p>
+
+<pre><code>&lt;dependencies&gt;
+    //这个是spring,web的依赖
+    &lt;dependency&gt;
+        &lt;groupId&gt;org.springframework.boot&lt;/groupId&gt;
+        &lt;artifactId&gt;spring-boot-starter-web&lt;/artifactId&gt;
+    &lt;/dependency&gt;
+    //测试的依赖
+    &lt;dependency&gt;
+        &lt;groupId&gt;org.springframework.boot&lt;/groupId&gt;
+        &lt;artifactId&gt;spring-boot-starter-test&lt;/artifactId&gt;
+        &lt;scope&gt;test&lt;/scope&gt;
+    &lt;/dependency&gt;
+&lt;/dependencies&gt;
+</code></pre>
+
+<p>该项目已经有了web依赖和test依赖,可以进行基本的开发了<br></p>
+
+<p>接着分别简单写一下labrador项目用到的框架 <br>
+Spring框架的作用是提供各种设计模式的支持，简化企业开发,解决一些面向对象开发的一些问题,利用DI依赖注入帮助面向接口编程的实现，并且支持AOP面向切面编程</p>
+
+<p><strong>Web层基本配置</strong> <br>
+<img src="img/p3.png" alt="" title="">图2<br>
+如上图2所示,点击main方法即可运行SpringBoot应用，运行main方法会直接启动一个Tomcat服务，并且默认监听8080端口接受http请求,此时需要编写一个Controller，即在SpringMVC框架下的Web方法入口.<br>
+完成此功能需要里两步<br></p>
+
+<p>1.编写一个Java类，在其上添加@Controller注解，并且编写一个映射方法 <br>
+<img src="img/p4.png" alt="" title=""> <br>
+2.编写完Controller，还需要让Spring容器可以发现它,所以在配置类上添加@ComponentScan({“xx.x.x”})注解,目的是告诉Spring去哪些包下扫描组件 <br>
+<img src="img/p5.png" alt="" title=""> <br>
+<br>
+以下废话可忽略： <br>
+完成上俩步之后,访问浏览器localhost:8080/demo,可以在服务器控制台看到输出HelloWorld!!!，即对/demo路径的请求确实触发了demo方法,但是在浏览器会看到Whitelabel Error Page，这是因为在传统的项目中，调用controller中的方法往往是想要得到一个数据模型,并且在方法结束处会返回一个String字符串,代表一个视图路径（如jsp页面）,然后SpringBoot会利用模板技术,使用得到的模型数据对视图进行渲染,然后返回前端页面……..但是我们的应用是Restful的，所以直接可以Service层处理过的数据，以JSON的形式返回给前端页面，即可达到避免RPC的使用，让服务器的功能可以被Web浏览器，或者手机客户端，安卓应用等等服务所重用（传统的web开发就是由于直接在服务器端对数据进行了渲染，然后直接返回渲染后的html，导致该应用和特定的视图耦合，导致该功能无法被一个android app重用，因为数据被视图污染了）<br></p>
+
+<p>浏览器提示错误,这是因为服务器按照默认解析,自动寻找“demo视图”而没有找到,因为我们的Rest应用,所以很少需要视图技术（除了去发送邮件等）,所以这里进行第三步：设置@ResponseBody注解，返回一个JSON格式的数据 <br>
+<img src="img/p7.png" alt="" title=""></p>
+
+<p><img src="img/p6.png" alt="" title=""> <br>
+到此Web层的最基本功能就可以用了（其他的@RequestBody以及跨域配置,以及异常处理器之后再看）</p>
+
+<p><strong>持久层搭建</strong></p>
+
+<p>Web层基本解决,除了跨域问题和一些请求细节的问题 <br>
+现在解决持久层的问题，首先对持久层进行配置<br>
+一.对持久层进行必要的配置 <br>
+导入mysql-jdbc驱动,以及JPA的依赖<br>
+<a href="http://www.baeldung.com/the-persistence-layer-with-spring-and-jpa">此链接包括了JavaConfig方式和传统的xml方式以及SpringBoot方式,labrador项目用的是那个xml方式的配置以及利用SpringBoot的自动配置</a><br>
+由于持久层是最重要的,所以这里关闭自动配置，并且采用JavaConfig方式进行手动配置 <br>
+1.在pom.xml中导入maven依赖</p>
+
+<pre><code>    &lt;dependency&gt;
+        &lt;groupId&gt;mysql&lt;/groupId&gt;
+        &lt;artifactId&gt;mysql-connector-java&lt;/artifactId&gt;
+        &lt;version&gt;5.1.44&lt;/version&gt;
+        &lt;scope&gt;runtime&lt;/scope&gt;
+    &lt;/dependency&gt;
+
+    &lt;dependency&gt;
+        &lt;groupId&gt;org.springframework.boot&lt;/groupId&gt;
+        &lt;artifactId&gt;spring-boot-starter-data-jpa&lt;/artifactId&gt;
+    &lt;/dependency&gt;
+</code></pre>
+
+<p>2.进行持久层的必要配置<br>
+①按照上方蓝色链接,进行JPA的必要配置,包括数据源，实体管理器的工厂，平台事务管理器等</p>
+
+<pre class="prettyprint"><code class=" hljs java"><span class="hljs-annotation">@Configuration</span>
+<span class="hljs-annotation">@EnableTransactionManagement</span>
+<span class="hljs-keyword">public</span> <span class="hljs-class"><span class="hljs-keyword">class</span> <span class="hljs-title">PersistenceJPAConfig</span> {</span>
+
+    <span class="hljs-comment">//1.mysql基本配置以及数据源(这个数据源需要改个好点的DBCP或者C3P0或者阿里的)</span>
+    <span class="hljs-comment">//这里的需要记得先去mysql创建好数据库,表就不需要创建,Hibernate自己会创建</span>
+    <span class="hljs-annotation">@Bean</span>
+    <span class="hljs-keyword">public</span> DataSource <span class="hljs-title">dataSource</span>(){
+        DriverManagerDataSource dataSource = <span class="hljs-keyword">new</span> DriverManagerDataSource();
+        dataSource.setDriverClassName(<span class="hljs-string">"com.mysql.jdbc.Driver"</span>);
+        dataSource.setUrl(<span class="hljs-string">"jdbc:mysql://localhost:3306/demodb"</span>);
+        dataSource.setUsername(<span class="hljs-string">"root"</span>);
+        dataSource.setPassword(<span class="hljs-string">"root"</span>);
+        <span class="hljs-keyword">return</span> dataSource;
+    }
+
+    <span class="hljs-comment">//2.配置hibernate的一些属性</span>
+    <span class="hljs-annotation">@Bean</span>
+    <span class="hljs-keyword">public</span> Properties <span class="hljs-title">additionalProperties</span>(){
+        Properties properties = <span class="hljs-keyword">new</span> Properties();
+        <span class="hljs-comment">//开发用update,生产用validate,测试用create-drop</span>
+        properties.setProperty(<span class="hljs-string">"hibernate.hbm2ddl.auto"</span>,<span class="hljs-string">"update"</span>);
+        properties.setProperty(<span class="hljs-string">"hibernate.dialect"</span>, <span class="hljs-string">"org.hibernate.dialect.MySQL5Dialect"</span>);
+        <span class="hljs-comment">//mysql 5.5版本之后默认存储引擎是innodb,但是hibernate默认还是会生成MyISAM的存储引擎建表</span>
+        <span class="hljs-comment">//绝大多数现在都用innodb,因为MyISAM不支持事务,而且其他各种差别也很大.这里需要显示配置存储引擎覆盖Hibernate的自动配置</span>
+        properties.setProperty(<span class="hljs-string">"hibernate.dialect.storage_engine"</span>,<span class="hljs-string">"innodb"</span>);
+        <span class="hljs-comment">//在控制台打印hibernate会生成的sql语句</span>
+        properties.setProperty(<span class="hljs-string">"hibernate.show_sql"</span>,<span class="hljs-string">"true"</span>);
+        <span class="hljs-keyword">return</span> properties;
+    }
+
+    <span class="hljs-comment">//3.配置EntityManageFactory,实体管理器工厂</span>
+    <span class="hljs-annotation">@Bean</span>
+    <span class="hljs-keyword">public</span> LocalContainerEntityManagerFactoryBean <span class="hljs-title">entityManagerFactory</span>(){
+        LocalContainerEntityManagerFactoryBean emFactory = <span class="hljs-keyword">new</span> LocalContainerEntityManagerFactoryBean();
+        <span class="hljs-comment">//设置数据源</span>
+        emFactory.setDataSource(dataSource());
+        <span class="hljs-comment">//实体管理器需要管理实体对象,类似Spring容器管理factoryBean一样,所以需要配置扫描路径,</span>
+        <span class="hljs-comment">//这里需要区分扫描到的@Entity是由Hibernate管理,而不是Spring</span>
+        emFactory.setPackagesToScan(<span class="hljs-keyword">new</span> String[]{<span class="hljs-string">"com.example.demo.domain"</span>});
+
+        JpaVendorAdapter vendorAdapter = <span class="hljs-keyword">new</span> HibernateJpaVendorAdapter();
+        emFactory.setJpaVendorAdapter(vendorAdapter);
+        emFactory.setJpaProperties(additionalProperties());
+        <span class="hljs-keyword">return</span> emFactory;
+    }
+
+    <span class="hljs-comment">//4.配置平台事务管理器,最后上面的配置都被包装好,Spring和PlatformTransactionManager进行交流</span>
+    <span class="hljs-annotation">@Bean</span>
+    <span class="hljs-keyword">public</span> PlatformTransactionManager <span class="hljs-title">transactionManager</span>(EntityManagerFactory entityManagerFactory){
+        JpaTransactionManager transactionManager = <span class="hljs-keyword">new</span> JpaTransactionManager();
+        transactionManager.setEntityManagerFactory(entityManagerFactory);
+        <span class="hljs-keyword">return</span> transactionManager;
+    }
+}</code></pre>
+
+<p>②将该配置类,引入主配置类(@SpringBootApplication注解其上包括@Configuration),并且添加扫描service和dao <br>
+<img src="img/p8.png" alt="" title=""><br>
+添加 <br>
+@EnableAutoConfiguration(exclude = {HibernateJpaAutoConfiguration.class})注解,可以关闭SpringBoot对JPA的自动配置 <br>
+<br>
+接着编写Dao和Service,Controller即可</p>
+
+
+
+<pre class="prettyprint"><code class=" hljs java"><span class="hljs-comment">//Dao实现类</span>
+<span class="hljs-annotation">@Repository</span>
+<span class="hljs-keyword">public</span> <span class="hljs-class"><span class="hljs-keyword">class</span> <span class="hljs-title">PersonDaoImpl</span> <span class="hljs-keyword">implements</span> <span class="hljs-title">PersonDao</span>{</span>
+    <span class="hljs-comment">//会在此注入一个和线程绑定的被事务管理器管理的实体管理器</span>
+    <span class="hljs-comment">//EntityManager是JAP对Hibernate Session的包装,Session中包装了Connection的实例</span>
+    <span class="hljs-annotation">@PersistenceContext</span>
+    <span class="hljs-keyword">private</span> EntityManager em;
+
+    <span class="hljs-annotation">@Override</span>
+    <span class="hljs-keyword">public</span> Person <span class="hljs-title">find</span>(Serializable id) {
+        <span class="hljs-keyword">return</span> em.find(Person.class,id);
+    }
+}
+<span class="hljs-comment">//Service实现类</span>
+<span class="hljs-annotation">@Service</span>
+<span class="hljs-keyword">public</span> <span class="hljs-class"><span class="hljs-keyword">class</span> <span class="hljs-title">PersonServiceImpl</span> <span class="hljs-keyword">implements</span> <span class="hljs-title">PersonService</span>{</span>
+    <span class="hljs-comment">//注入PersonDao的实现类</span>
+    <span class="hljs-annotation">@Autowired</span>
+    <span class="hljs-keyword">private</span> PersonDao personDao;
+
+    <span class="hljs-annotation">@Transactional</span>
+    <span class="hljs-annotation">@Override</span>
+    <span class="hljs-keyword">public</span> Person <span class="hljs-title">findPersonById</span>(Integer id) {
+        <span class="hljs-keyword">return</span> personDao.find(id);
+    }
+
+}
+
+<span class="hljs-comment">//Controller</span>
+<span class="hljs-comment">//注入PersonService的实现类</span>
+    <span class="hljs-annotation">@Autowired</span>
+    <span class="hljs-keyword">private</span> PersonService personService;
+    <span class="hljs-comment">//{}中为路径变量,:后面为路径变量需要符合的正则表达式,@PathVariable中的值为前端传递过来的请求参数的名字</span>
+    <span class="hljs-annotation">@GetMapping</span>(<span class="hljs-string">"/person/{personId:\\d+}"</span>)
+    <span class="hljs-annotation">@ResponseBody</span>
+    <span class="hljs-keyword">public</span> Person <span class="hljs-title">getPersonById</span>(@<span class="hljs-title">PathVariable</span>("personId") Integer id){
+        <span class="hljs-keyword">return</span> personService.findPersonById(id);
+    }
+
+<span class="hljs-comment">//实体类,注意需要在Hibernate配置中，扫描实体类所在包路径</span>
+<span class="hljs-comment">//emFactory.setPackagesToScan(new       String[]{"com.example.demo.domain"});</span>
+<span class="hljs-annotation">@Entity</span>
+<span class="hljs-annotation">@Table</span>(name=<span class="hljs-string">"person"</span>)
+<span class="hljs-keyword">public</span> <span class="hljs-class"><span class="hljs-keyword">class</span> <span class="hljs-title">Person</span> {</span>
+    <span class="hljs-annotation">@Id</span>
+    <span class="hljs-comment">//配置mysql对主键自增</span>
+    <span class="hljs-annotation">@GeneratedValue</span>(strategy = GenerationType.IDENTITY)
+    <span class="hljs-keyword">private</span> Integer id;
+    <span class="hljs-annotation">@Column</span>(name = <span class="hljs-string">"name"</span>,nullable = <span class="hljs-keyword">false</span>,length = <span class="hljs-number">32</span>)
+    <span class="hljs-keyword">private</span> String name;
+    <span class="hljs-keyword">private</span> Integer age;
+    <span class="hljs-comment">//Constructor And Getter Setter Method</span>
+}</code></pre>
+
+<p>运行程序之前,需要到mysql create database demodb；创建一个数据库 <br>
+然后启动SpringBoot应用,Hibernate会发送DDL建立和实体类所映射的person表 <br>
+我们还需要手动insert into person values (null,12,’kg3’);添加一条测试记录 <br>
+到此即可运行,在前端用PostMan工具模拟get请求 <br>
+<img src="img/p9.png" alt="" title=""> <br>
+到此为止，框架搭建基本完成，除了一些细节，包括跨域问题,因为此项目使用使用Rest架构,返回为JSON，所以需要由前端渲染返回的JSON体，本项目用的前端是ES6+React+Redux，以及Webpack,node.js …主要问题在于前段html页面可能运行在其他服务器，非本服务器，尤其是开发时，html运行于node.js上,所以 会有浏览器跨域的限制.接下来是跨域限制的截图，以及解决办法（只需要简单配置）<br>
+<img src="img/p10.png" alt="" title=""> <br>
+//新增配置类,需要extends WebMvcConfigurerAdapter</p>
+
+
+
+<pre class="prettyprint"><code class=" hljs java"><span class="hljs-annotation">@Configuration</span>
+<span class="hljs-keyword">public</span> <span class="hljs-class"><span class="hljs-keyword">class</span> <span class="hljs-title">DemoApplicationConfig</span> <span class="hljs-keyword">extends</span> <span class="hljs-title">WebMvcConfigurerAdapter</span> {</span>
+    <span class="hljs-annotation">@Override</span>
+    <span class="hljs-keyword">public</span> <span class="hljs-keyword">void</span> <span class="hljs-title">addCorsMappings</span>(CorsRegistry registry) {
+        registry.addMapping(<span class="hljs-string">"/**"</span>)
+                .allowedOrigins(<span class="hljs-string">"*"</span>,<span class="hljs-keyword">null</span>)
+                .allowedMethods(<span class="hljs-string">"POST"</span>, <span class="hljs-string">"GET"</span>, <span class="hljs-string">"PUT"</span>, <span class="hljs-string">"OPTIONS"</span>, <span class="hljs-string">"DELETE"</span>)
+                .allowCredentials(<span class="hljs-keyword">true</span>)
+                <span class="hljs-comment">//这里是暴露可以被前端获取的响应头,如果没有这个设置,则响应头无法被js使用</span>
+                .exposedHeaders(<span class="hljs-string">"x-total-count"</span>)
+                .maxAge(<span class="hljs-number">3600</span>);
+    }
+}</code></pre>
+
+<p><img src="img/p12.png" alt="" title=""></p>
+
+
+
+<h2 id="可以看到请求成功解决了跨域问题到这里项目中的框架大致搭建完毕其他依赖需要的时候再导入即可">可以看到请求成功,解决了跨域问题。到这里项目中的框架大致搭建完毕,其他依赖需要的时候再导入即可</h2>
+
+<p>基本入门以上内容即可,剩余详细功能和注解遇到了百度把,简单说一下ElasticSearch在Spring中的搭建</p>
+
+<blockquote>
+  <ul>
+  <li><a href="https://www.elastic.co/guide/cn/elasticsearch/guide/current/getting-started.html">中文权威参考链接(版本稍微旧一点)</a></li>
+  <li><a href="https://www.elastic.co/guide/en/elasticsearch/reference/current/getting-started.html">5.6.1版本的英文文档，请求参数以及映射配置详细应该参考这个文档</a></li>
+  <li><a href="https://www.elastic.co/guide/en/elasticsearch/client/java-rest/current/java-rest-low.html">java的客户端文档(咱们用的是lowlevel，所以不需要学额外的api，只要看es的内容并且拼接需要的json即可)</a></li>
+  <li><a href="https://www.tutorialspoint.com/jackson/jackson_quick_guide.htm">jackson的学习链接(jackson用于构建json体的,是评价最好,而且spring框架选择的json工具包)</a><br></li>
+  </ul>
+</blockquote>
+
+<p>接下来在项目中进行ES客户端的配置(有点类似JDBC获取connection,获取redis获取jedis)</p>
+
+<p><strong>ElasticSearch的配置以及使用</strong> <br>
+1.添加es客户端的依赖</p>
+
+
+
+<pre class="prettyprint"><code class=" hljs xml"><span class="hljs-tag">&lt;<span class="hljs-title">dependency</span>&gt;</span>
+    <span class="hljs-tag">&lt;<span class="hljs-title">groupId</span>&gt;</span>org.elasticsearch.client<span class="hljs-tag">&lt;/<span class="hljs-title">groupId</span>&gt;</span>
+    <span class="hljs-tag">&lt;<span class="hljs-title">artifactId</span>&gt;</span>elasticsearch-rest-client<span class="hljs-tag">&lt;/<span class="hljs-title">artifactId</span>&gt;</span>
+    <span class="hljs-tag">&lt;<span class="hljs-title">version</span>&gt;</span>5.6.1<span class="hljs-tag">&lt;/<span class="hljs-title">version</span>&gt;</span>
+<span class="hljs-tag">&lt;/<span class="hljs-title">dependency</span>&gt;</span></code></pre>
+
+<p>2.在Spring中配置该客户端单例(线程安全)</p>
+
+
+
+<pre class="prettyprint"><code class=" hljs java">    <span class="hljs-comment">//ElasticSearch的核心对象,线程安全</span>
+    <span class="hljs-comment">//官网对象说明：https://www.elastic.co/guide/en/elasticsearch/client/java-rest/current/java-rest-low-usage-initialization.html</span>
+    <span class="hljs-annotation">@Bean</span>
+    <span class="hljs-keyword">public</span> RestClient <span class="hljs-title">restClient</span>(){
+        HttpHost httpHost = <span class="hljs-keyword">new</span> HttpHost(<span class="hljs-string">"localhost"</span>, <span class="hljs-number">9200</span>, <span class="hljs-string">"http"</span>);
+        <span class="hljs-keyword">return</span> RestClient.builder(httpHost).build();
+    }</code></pre>
+
+<p>3.获取客户端，发送请求即可 <br>
+<a href="https://www.elastic.co/guide/en/elasticsearch/client/java-rest/5.6/java-rest-low-usage-requests.html">官方文档参考链接</a></p>
+
+
+
+<pre class="prettyprint"><code class=" hljs java"><span class="hljs-annotation">@Configuration</span>
+<span class="hljs-keyword">public</span> <span class="hljs-class"><span class="hljs-keyword">class</span> <span class="hljs-title">DemoApplicationConfig</span> <span class="hljs-keyword">extends</span> <span class="hljs-title">WebMvcConfigurerAdapter</span> {</span>
+    <span class="hljs-annotation">@Override</span>
+    <span class="hljs-keyword">public</span> <span class="hljs-keyword">void</span> <span class="hljs-title">addCorsMappings</span>(CorsRegistry registry) {
+        registry.addMapping(<span class="hljs-string">"/**"</span>)
+                .allowedOrigins(<span class="hljs-string">"*"</span>,<span class="hljs-keyword">null</span>)
+                .allowedMethods(<span class="hljs-string">"POST"</span>, <span class="hljs-string">"GET"</span>, <span class="hljs-string">"PUT"</span>, <span class="hljs-string">"OPTIONS"</span>, <span class="hljs-string">"DELETE"</span>)
+                .allowCredentials(<span class="hljs-keyword">true</span>)
+                <span class="hljs-comment">//这里是暴露可以被前端获取的响应头,如果没有这个设置,则响应头无法被js使用</span>
+                .exposedHeaders(<span class="hljs-string">"x-total-count"</span>)
+                .maxAge(<span class="hljs-number">3600</span>);
+    }
+
+
+    <span class="hljs-comment">//ElasticSearch的核心对象,线程安全</span>
+    <span class="hljs-comment">//官网对象说明：https://www.elastic.co/guide/en/elasticsearch/client/java-rest/current/java-rest-low-usage-initialization.html</span>
+    <span class="hljs-annotation">@Bean</span>
+    <span class="hljs-keyword">public</span> RestClient <span class="hljs-title">restClient</span>(){
+        HttpHost httpHost = <span class="hljs-keyword">new</span> HttpHost(<span class="hljs-string">"localhost"</span>, <span class="hljs-number">9200</span>, <span class="hljs-string">"http"</span>);
+        <span class="hljs-keyword">return</span> RestClient.builder(httpHost).build();
+    }
+}</code></pre>
+
+<p>测试代码</p>
+
+
+
+<pre class="prettyprint"><code class=" hljs java"><span class="hljs-annotation">@SpringBootTest</span>(classes = DemoApplication.class)
+<span class="hljs-annotation">@RunWith</span>(SpringRunner.class)
+<span class="hljs-keyword">public</span> <span class="hljs-class"><span class="hljs-keyword">class</span> <span class="hljs-title">ElasticClientDemo</span> {</span>
+
+    <span class="hljs-annotation">@Resource</span>
+    <span class="hljs-keyword">private</span> RestClient restClient;
+
+    <span class="hljs-annotation">@Test</span>
+    <span class="hljs-keyword">public</span> <span class="hljs-keyword">void</span> <span class="hljs-title">request</span>() <span class="hljs-keyword">throws</span> Exception{
+        <span class="hljs-comment">//reference https://www.elastic.co/guide/en/elasticsearch/client/java-rest/5.6/java-rest-low-usage-requests.html</span>
+        Map&lt;String, String&gt; params = Collections.emptyMap();
+        Response reponse = restClient.performRequest(<span class="hljs-string">"GET"</span>, <span class="hljs-string">"/"</span>, params);
+        InputStream content = reponse.getEntity().getContent();
+        ObjectMapper mapper = <span class="hljs-keyword">new</span> ObjectMapper();
+        <span class="hljs-comment">//jackson文档用google搜,百度出来的都比较旧,要么是json-lib,要么是阿里的fastjson</span>
+        JsonNode rootNode = mapper.readTree(content);
+        System.out.println(rootNode);
+
+    }
+}</code></pre></div></body>
+</html>

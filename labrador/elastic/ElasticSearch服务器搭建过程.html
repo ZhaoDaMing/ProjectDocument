@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ElasticSearch服务器搭建过程</title>
+<link rel="stylesheet" href="https://stackedit.io/res-min/themes/base.css" />
+<script type="text/javascript" src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS_HTML"></script>
+</head>
+<body><div class="container"><h2 id="elasticsearch环境搭建">ElasticSearch环境搭建</h2>
+
+<p><a href="https://www.elastic.co/guide/en/elasticsearch/reference/master/_installation.html">Installation参考文档</a></p>
+
+
+
+<h3 id="1环境要求-jdk18以上下载完在linux上配置好环境变量">1.环境要求 jdk1.8以上,下载完在linux上配置好环境变量</h3>
+
+<p>在其他人的服务器上,所有无法修改/etc/profile文件,可以修改~目录下的.bashrc <br>
+ JAVA_HOME=/home/zhaodaming/development/jdk1.8.0_144 <br>
+  PATH=<span>$</span>JAVA_HOME/bin:<span>$</span>PATH <br>
+  CLASSPATH=<span>$</span>JAVA_HOME/jre/lib/ext:<span>$</span>JAVA_HOME/lib/tools.jar <br>
+  export PATH JAVA_HOME CLASSPATH</p>
+
+
+
+<h3 id="2根据自己操作系统选择安装包地址">2.根据自己操作系统选择安装包:<a href="https://www.elastic.co/downloads/elasticsearch">地址</a></h3>
+
+<p>因为我装在linux里,这里选择tar <br>
+  解压  tar -zxvf elasticsearch-5.6.1.tar.gz <br>
+  启动  cd elasticsearch-7.0.0-alpha1/bin <br>
+            ./elasticsearch <br>
+  按照官网示例的话,执行到这里,单个结点服务器就已经成功启动.接下来可以按照API对9200端口进行一些访问 <br>
+    如linux下使用curl <br>
+    curl  ‘<a href="http://localhost:9200">http://localhost:9200</a></p>
+
+
+
+<h3 id="3搭建服务器遇到的问题和解决">3.搭建服务器遇到的问题和解决</h3>
+
+<p>无法启动问题(首先不能以root用户去启动服务),启动时报如下错误 <br>
+  ERROR:  bootstrap checks failed <br>
+  [1]max file descriptors [65535] for elasticsearch process is too low, increase to at least [65536] <br>
+  [2]max number of threads [1024] for user [elk] is too low, increase to at least [2048] <br>
+  [3]max virtual memory areas vm.max_map_count [256000] is too low, increase to at least [262144] <br>
+  [4]system call filters failed to install; check the logs and fix your configuration or disable system call filters at your own risk</p>
+
+<p>这四个问题分别按照网上的解决办法,解决了,就是进行一些资源分配的配置 <br>
+  解决这些问题需要root权限修改一些配置文件 <br>
+  错误[1]、[2]解决</p>
+
+<p>vim /etc/security/limits.conf</p>
+
+<p>添加如下配置项： <br>
+  * - nproc 65535 <br>
+  * - nofile 409600 <br>
+  elastic - memlock unlimited</p>
+
+<p>vim /etc/security/limits.d/90-nproc.conf <br>
+  修改如下配置项目： <br>
+  * soft nproc unlimited <br>
+  root soft nproc unlimited <br>
+  修改完成后，重新登录账户，查看设置是否生效 <br>
+  ulimit -n  <br>
+  ulimit -u</p>
+
+<p>错误[3]解决 <br>
+  vim  /etc/sysctl.conf <br>
+  # 一个进程可以拥有的VMA(虚拟内存区域)的数量： <br>
+  vm.max_map_count=262144 <br>
+  sysctl -p</p>
+
+<p>错误[4]解决 <br>
+  编辑elasticserach的home目录下的conf/elasticsearch.yml <br>
+  bootstrap.system_call_filter: false <br>
+  进行以上4步配置之后程序启动成功</p>
+
+<p>启动成功之后如果要其他机器可以访问到该elastic的服务需要如下配置 <br>
+  vim  elasticsearch-home/conf./elasticsearch.yml <br>
+  #配置其他IP可访问  <br>
+  network.host: 0.0.0.0 <br>
+  #设置可以跨域,在浏览器插件(elastic-header插件),为了让浏览器插件可以访问elastic的服务,从而进行一些方便的操作 <br>
+  http.cors.enabled: true <br>
+  http.cors.allow-origin: “*” <br>
+  打开防火墙特定端口 <br>
+  vim /etc/sysconfig/iptables  <br>
+  添加9200端口 <br>
+  service iptables restart防火墙(需要root权限) <br>
+  至此,基本没啥问题了服务器启动了..</p>
+
+
+
+<h3 id="4搭建集群">4.搭建集群</h3>
+
+<p>elasticsearch搭建集群比较简单 <br>
+  其实就是多个elasticsearch单独启动即可(将之前安装好的elasticsearch-5.6.0复制几份,把目录重新命名) <br>
+  但是需要对 elastic_homedir/conf/elasticsearch.yml进行配置,如下仅仅记录每个elasticsearch.yml的基本配置 <br>
+  假如有配置三个几点的集群,目录如下 <br>
+  elasticsearch-5.6.0  slave1  slave2  (slave1是将elasticsearch-5.6.0复制并且重命名) <br>
+  分别修改各自目录下的/conf/elasticsearch.yml ( 假如我给集群起名字加theCluster) <br>
+———————master节点——————————— <br>
+  #配置其他IP可访问 <br>
+  network.host: 0.0.0.0 <br>
+  #启动时候出现问题,需要将true改为false <br>
+  bootstrap.system_call_filter: false <br>
+  #设置可以跨域,在浏览器插件可以方便的查看elasticsearch服务器的健康以及其他信息 <br>
+  http.cors.enabled: true <br>
+  http.cors.allow-origin: “*” <br>
+  #搭建测试集群(这部分是专门为集群设置的) <br>
+  cluster.name: theCluster <br>
+  node.name: theMaster <br>
+  node.master: true <br>
+———————slave1节点——————————— <br>
+  cluster.name: theCluster <br>
+  node.name: lave1 <br>
+  network.host: 127.0.0.1 <br>
+  #这里注意端口不能和其他结点冲突 <br>
+  http.port: 9201 <br>
+  #这里配置了其他结点的IP列表,从而该结点可以发现其他结点完成集群搭建 <br>
+  discovery.zen.ping.unicast.hosts: [“127.0.0.1”] <br>
+——————–slave2节点——————————— <br>
+  cluster.name: theCluster <br>
+  node.name: lave2 <br>
+  network.host: 127.0.0.1 <br>
+  #这里注意端口不能和其他结点冲突 <br>
+  http.port: 9202 <br>
+  #这里配置了其他结点的IP列表,从而该结点可以发现其他结点完成集群搭建 <br>
+  discovery.zen.ping.unicast.hosts: [“127.0.0.1”]</p></div></body>
+</html>

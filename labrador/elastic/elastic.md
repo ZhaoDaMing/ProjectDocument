@@ -76,6 +76,11 @@ _id
 [副本分片不光是容灾的备份，最主要是可以帮助整体性能,主分片不能变,副分片可以增加（搜索的性能）](https://www.elastic.co/guide/cn/elasticsearch/guide/current/_scale_horizontally.html)
 
 ###db->index table->type只是简单方便理解下,实际上建立类型不能按照这个关系,（我自己理解，应该是mysql一个table对应一个索引库,以后再看。。）
-[类型问题1-冲突和效率](https://www.elastic.co/guide/cn/elasticsearch/guide/current/mapping.html)
+[类型可能引发的问题1-冲突和效率](https://www.elastic.co/guide/cn/elasticsearch/guide/current/mapping.html)
 这个不太理解,但是现在照着避免就好(lucene我只是简单了解,所以具体为什么效率低不很清楚,下面的文档有说道什么压缩效率之类的)<br>
-[类型问题2-将来取消,避免问题](https://www.elastic.co/guide/en/elasticsearch/reference/current/removal-of-types.html)
+[类型可能引发的问题2-将来取消,避免问题](https://www.elastic.co/guide/en/elasticsearch/reference/current/removal-of-types.html)
+
+####零停机和索引别名
+[中文旧版本-重新索引数据](https://www.elastic.co/guide/cn/elasticsearch/guide/current/reindex.html)
+<br>
+[索引别名和零停机](https://www.elastic.co/guide/cn/elasticsearch/guide/current/index-aliases.html)
